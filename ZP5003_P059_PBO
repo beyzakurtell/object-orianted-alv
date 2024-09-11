@@ -1,0 +1,7 @@
+MODULE STATUS_0100 OUTPUT.
+  SET PF-STATUS '0100'.
+*  SET TITLEBAR 'xxx'.
+
+  perform display_alv.
+
+ENDMODULE.
