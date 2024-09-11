@@ -1,0 +1,62 @@
+
+
+REPORT  ZP5003_P059.
+
+INCLUDE ZP5003_P059_TOP.
+INCLUDE ZP5003_P059_PBO.
+INCLUDE ZP5003_P059_PAI.
+INCLUDE ZP5003_P059_FRM.
+
+
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+
+  CALL FUNCTION 'F4_FILENAME'
+   EXPORTING
+*     PROGRAM_NAME        = SYST-CPROG
+*     DYNPRO_NUMBER       = SYST-DYNNR
+     FIELD_NAME          = 'P_FILE'
+   IMPORTING
+     FILE_NAME           = p_file .
+
+
+
+
+  START-OF-SELECTION.
+  CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+    EXPORTING
+*     I_FIELD_SEPERATOR          =
+      I_LINE_HEADER              = 'x'
+      I_TAB_RAW_DATA             = gt_raw_data
+      I_FILENAME                 = p_file
+    TABLES
+      I_TAB_CONVERTED_DATA       = gt_temp
+   EXCEPTIONS
+     CONVERSION_FAILED          = 1
+     OTHERS                     = 2.
+
+
+    LOOP AT gt_temp INTO gs_temp.
+      CLEAR: gs_itab.
+
+      gs_itab-fatura_no = gs_temp-fatura_no.
+      gs_itab-musteri_id = gs_temp-musteri_id.
+      gs_itab-fatura_tarihi = gs_temp-fatura_tarihi.
+      gs_itab-matnr = gs_temp-matnr.
+      gs_itab-menge = gs_temp-menge.
+      gs_itab-birim_fiyat = gs_temp-birim_fiyat.
+      gs_itab-sel = ' '.
+
+
+      APPEND gs_itab TO gt_itab.
+    ENDLOOP.
+
+
+perform get_data.
+perform set_fcat.
+perform set_layout.
+
+
+
+
+  CALL SCREEN 0100.
