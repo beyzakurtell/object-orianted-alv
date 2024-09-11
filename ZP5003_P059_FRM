@@ -1,0 +1,261 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZP5003_P059_FRM
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Form  DISPLAY_ALV
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM DISPLAY_ALV .
+
+  IF GO_ALV  IS INITIAL .
+    CREATE OBJECT GO_COST
+      EXPORTING
+        CONTAINER_NAME = 'CC_ALV'.
+
+
+    CREATE OBJECT GO_ALV
+      EXPORTING
+        I_PARENT = GO_COST. "CL_GUI_CONTAINER=>SCREEN0.
+
+
+
+
+
+    CALL METHOD GO_ALV->SET_TABLE_FOR_FIRST_DISPLAY
+      exporting
+*    I_BUFFER_ACTIVE               =
+*    I_BYPASSING_BUFFER            =
+*    I_CONSISTENCY_CHECK           =
+*    I_STRUCTURE_NAME              =
+*    IS_VARIANT                    =
+*    I_SAVE                        =
+*    I_DEFAULT                     = 'X'
+        IS_LAYOUT                     =    gs_layout " Layout
+*    IS_PRINT                      =
+*    IT_SPECIAL_GROUPS             =
+*    IT_TOOLBAR_EXCLUDING          =
+*    IT_HYPERLINK                  =
+*    IT_ALV_GRAPHICS               =
+*    IT_EXCEPT_QINFO               =
+*    IR_SALV_ADAPTER               =
+      changing
+        IT_OUTTAB                     =     gt_itab
+        IT_FIELDCATALOG               =     gt_fcat
+*    IT_SORT                       =
+*    IT_FILTER                     =
+*  exceptions
+*    INVALID_PARAMETER_COMBINATION = 1
+*    PROGRAM_ERROR                 = 2
+*    TOO_MANY_LINES                = 3
+*    OTHERS                        = 4
+      .
+    if sy-subrc <> 0.
+
+    endif.
+
+
+  ELSE.
+    CALL METHOD GO_ALV->REFRESH_TABLE_DISPLAY.
+  ENDIF.
+
+
+ENDFORM.                    " DISPLAY_ALV
+*&---------------------------------------------------------------------*
+*&      Form  GET_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM GET_DATA .
+*select * from gt_itab into CORRESPONDING FIELDS OF table gt_tbl.
+
+  PERFORM DURUM.
+
+
+ENDFORM.                    " GET_DATA
+*&---------------------------------------------------------------------*
+*&      Form  SET_FCAT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM SET_FCAT .
+*  PERFORM: set_fieldcatalog USING 'SEL' '' '' '' '' '1' ,
+  PERFORM: set_fieldcatalog USING 'DURUM' '' '' '' '' '3' ,
+           set_fieldcatalog USING 'FATURA_NO' 'Fatura No' 'Fatura Numarası' 'Fatura Numarası' '' '7' ,
+           set_fieldcatalog USING 'MUSTERI_ID' 'Müşteri ID' 'Müşteri ID' 'Müşteri ID' '' '7' ,
+           set_fieldcatalog USING 'FATURA_TARIHI' 'Fatura Tarihi' 'Fatura Tarihi' 'Fatura Tarihi' '' '10' ,
+           set_fieldcatalog USING 'MATNR' 'Malzeme No' 'Malzeme Numarası' 'Malzeme Numarası' '' '10' ,
+           set_fieldcatalog USING 'MENGE' 'Miktar' 'Miktar' 'Miktar' '' '8' ,
+           set_fieldcatalog USING 'BIRIM_FIYAT' 'Birim Fiyat' 'Birim Fiyat' 'Birim Fiyat' '' '8' .
+
+
+
+ENDFORM.                    " SET_FCAT
+
+
+FORM set_fieldcatalog using p_fieldname
+                            p_SELTEXT_S
+                            p_SELTEXT_M
+                            p_SELTEXT_L
+                            p_key
+                            p_outputlen.
+
+  clear gs_fcat.
+  gs_fcat-fieldname = p_fieldname.
+  gs_fcat-SCRTEXT_S = p_SELTEXT_S.
+  gs_fcat-SCRTEXT_M = p_SELTEXT_M.
+  gs_fcat-SCRTEXT_L = p_SELTEXT_L.
+  gs_fcat-KEY = p_KEY.
+  gs_fcat-OUTPUTLEN = P_OUTPUTLEN.
+  APPEND gs_fcat to gt_fcat.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  SET_LAYOUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM SET_LAYOUT .
+  clear: gs_layout.
+  gs_layout-ZEBRA = abap_true.
+*  gs_layout-COL_OPT = abap_true.
+  gs_layout-BOX_FNAME = 'SEL'.
+  gs_layout-SEL_MODE = 'D'.
+ENDFORM.                    " SET_LAYOUT
+*&---------------------------------------------------------------------*
+*&      Form  SAVE_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM save_data.
+  data: lv_text2 TYPE char100.
+  data: lv_text3 TYPE char100.
+  " ALV'den seçilen satırları al
+  CALL METHOD go_alv->get_selected_rows
+    IMPORTING
+      et_index_rows = lt_selected_rows.
+
+  " Seçilen satırları işlemek için iç tabloya ekle
+  LOOP AT lt_selected_rows INTO lv_index.
+    READ TABLE gt_itab INTO gs_itab INDEX lv_index.
+    IF sy-subrc = 0.
+      APPEND gs_itab TO lt_selected_data.
+    ENDIF.
+  ENDLOOP.
+
+  " Veritabanı işlemleri
+  LOOP AT lt_selected_data INTO gs_selected_data.
+    CLEAR gs_satisfa.
+    SELECT SINGLE * FROM zp5003_satisfa_t
+      INTO gs_satisfa
+      WHERE fatura_no = gs_selected_data-fatura_no.
+
+    IF sy-subrc = 0.
+      " Mevcut fatura bulundu, mesaj hazırla
+      IF lv_text2 IS INITIAL.
+        lv_text2 = gs_selected_data-fatura_no.
+      ELSE.
+        CONCATENATE lv_text2 gs_selected_data-fatura_no INTO lv_text2 SEPARATED BY ', '.
+      ENDIF.
+    ELSE.
+      " Yeni fatura ekle
+      MOVE-CORRESPONDING gs_selected_data TO gs_satisfa.
+      INSERT zp5003_satisfa_t FROM gs_satisfa.
+      IF lv_text3 IS INITIAL.
+        lv_text3 = gs_selected_data-fatura_no.
+      ELSE.
+        CONCATENATE lv_text3 gs_selected_data-fatura_no INTO lv_text3 SEPARATED BY ', '.
+      ENDIF.
+    ENDIF.
+  ENDLOOP.
+
+  " Mesaj oluşturma
+  DATA: t_message TYPE j1uif_messsage_t,
+        s_message LIKE LINE OF t_message,
+        lv_message TYPE char255.
+
+  " Kayıt eklenen faturalar için mesaj
+  IF lv_text3 IS NOT INITIAL.
+    IF strlen( lv_text3 ) = 1.
+      CONCATENATE lv_text3 'numaralı fatura kaydedilmiştir.' INTO lv_message SEPARATED BY space.
+    ELSE.
+      CONCATENATE lv_text3 'numaralı faturalar kaydedilmiştir.' INTO lv_message SEPARATED BY space.
+    ENDIF.
+
+    s_message-head = '1'.
+    s_message-text = lv_message.
+    APPEND s_message TO t_message.
+  ENDIF.
+
+  " Mevcut olan faturalar için mesaj
+  IF lv_text2 IS NOT INITIAL.
+    IF strlen( lv_text2 ) = 1.
+      CONCATENATE lv_text2 'numaralı fatura mevcuttur. Tekrar kaydedilemez!' INTO lv_message SEPARATED BY space.
+    ELSE.
+      CONCATENATE lv_text2 'numaralı faturalar mevcuttur. Tekrar kaydedilemez!' INTO lv_message SEPARATED BY space.
+    ENDIF.
+
+    s_message-head = '2'.
+    s_message-text = lv_message.
+    APPEND s_message TO t_message.
+  ENDIF.
+
+  " Mesajları göster
+  IF t_message IS NOT INITIAL.
+    CALL FUNCTION '/ATL/POPUP_MULTI_MESSAGES'
+      EXPORTING
+        mode      = 'X'
+      TABLES
+        t_message = t_message.
+  ENDIF.
+
+  PERFORM durum.
+
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*&      Form  DURUM
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM DURUM .
+  LOOP AT gt_itab ASSIGNING <GFS_ITAB>.
+
+
+
+    SELECT SINGLE * FROM ZP5003_SATISFA_T
+      into gs_satisfa
+      WHERE FATURA_NO = <gfs_itab>-FATURA_NO.
+
+    IF sy-subrc = 0.
+      " Fatura numarası eşleşirse, yeşil ikon getir
+
+      <gfs_itab>-durum = '@08@'.
+    ELSE.
+* EŞLEŞME YOKSA KIRMIZI İKON GELİR
+      <gfs_itab>-durum = '@0A@'.
+      " Eşleşme yoksa, boş bırak
+*    CLEAR <gfs_itab>-durum.
+    ENDIF.
+
+
+  ENDLOOP.
+ENDFORM.                    " DURUM
