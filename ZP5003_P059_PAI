@@ -1,0 +1,28 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZP5003_P059_PAI
+*&---------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+  CASE sy-ucomm.
+    WHEN '&BACK'.
+      SET SCREEN 0.
+    WHEN '&SAVE'.
+      data : lv_text TYPE char100.
+      data : lv_message TYPE char100.
+
+
+
+
+
+      CLEAR: lt_selected_rows,
+      lt_selected_data,
+      gs_selected_data.
+
+
+      PERFORM save_data.
+
+
+  ENDCASE.
+
+
+
+ENDMODULE.
