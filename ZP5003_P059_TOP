@@ -1,0 +1,76 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZP5003_P059_TOP
+*&---------------------------------------------------------------------*
+
+TYPE-POOLS ICON.
+data: go_alv TYPE REF TO CL_GUI_ALV_GRID,
+      go_cost TYPE REF TO CL_GUI_CUSTOM_CONTAINER.
+
+
+data: gt_satisfa TYPE TABLE OF ZP5003_SATISFA_T,
+      gs_satisfa TYPE ZP5003_SATISFA_T.
+
+
+
+
+  TYPES: BEGIN OF gty_temp,
+    FATURA_NO     TYPE  ZP5003_FATURA_NO_DE,
+    MUSTERI_ID    TYPE  ZP5003_MUSTERI_ID_DE,
+    FATURA_TARIHI TYPE  ZP5003_FATURA_TARIHI_DE,
+    MATNR         TYPE  ZP5003_MATNR_DE,
+    MENGE         TYPE  ZP5003_MENGE_DE,
+    BIRIM_FIYAT   TYPE  ZP5003_BIRIM_FIYAT_DE,
+END OF gty_temp.
+
+DATA: gt_temp TYPE TABLE OF gty_temp,
+      gs_temp TYPE  gty_temp,
+      gt_raw_data TYPE truxs_t_text_data.
+
+
+  TYPES: BEGIN OF gty_itab,
+    sel TYPE c LENGTH 1,
+    durum TYPE icon_d,
+    FATURA_NO     TYPE  ZP5003_FATURA_NO_DE,
+    MUSTERI_ID    TYPE  ZP5003_MUSTERI_ID_DE,
+    FATURA_TARIHI TYPE  ZP5003_FATURA_TARIHI_DE,
+    MATNR         TYPE  ZP5003_MATNR_DE,
+    MENGE         TYPE  ZP5003_MENGE_DE,
+    BIRIM_FIYAT   TYPE  ZP5003_BIRIM_FIYAT_DE,
+END OF gty_itab.
+
+DATA: gt_itab TYPE TABLE OF gty_itab,
+      gs_itab TYPE  gty_itab.
+
+
+
+
+
+
+*
+*FIELD-SYMBOLS: <gfs_fc> TYPE LVC_S_FCAT.
+*
+*
+FIELD-SYMBOLS: <gfs_itab> TYPE gty_itab.
+
+PARAMETERS: p_file TYPE rlgrap-filename.
+
+DELETE FROM  ZP5003_SATISFA_T where fatura_no = '1'.
+DELETE FROM  ZP5003_SATISFA_T where fatura_no = '6'.
+DELETE FROM  ZP5003_SATISFA_T where fatura_no = '7'.
+commit WORK.
+
+
+
+
+
+data: gt_fcat TYPE LVC_T_FCAT,
+      gs_fcat TYPE LVC_S_FCAT,
+      gs_layout TYPE LVC_S_LAYO.
+
+
+
+" SEÇİM İÇİN
+DATA: lt_selected_rows TYPE lvc_t_row,
+      lv_index TYPE lvc_index,
+      lt_selected_data TYPE TABLE OF gty_itab,
+      gs_selected_data TYPE gty_itab.
